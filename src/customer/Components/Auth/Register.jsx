@@ -1,0 +1,156 @@
+import React, { useState, useEffect } from 'react';
+import { Grid, TextField, Button, Snackbar, Alert, MenuItem, Select, InputLabel, FormControl } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { getUser, register } from "../../../Redux/Auth/Action";
+import { toast } from "react-toastify";
+
+export default function RegisterUserForm({ handleNext }) {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [openSnackBar, setOpenSnackBar] = useState(false);
+  const { auth } = useSelector((store) => store);
+  const jwt = localStorage.getItem("jwt");
+  const handleClose=()=>setOpenSnackBar(false);
+
+
+  useEffect(() => {
+    if (jwt) {
+      dispatch(getUser(jwt))
+    }
+  }, [dispatch, jwt])
+
+  useEffect(() => {
+    if (auth.user || auth.error) setOpenSnackBar(true)
+  }, [auth.error, auth.user]);
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const userData = {
+      firstName: capitalizeFirstLetter(data.get("firstName")),
+      lastName: capitalizeFirstLetter(data.get("lastName")),
+      email: data.get("email"),
+      password: data.get("password"),
+      role: data.get("role")
+    }
+    if (!passwordRegex.test(userData.password)) {
+      toast.error("Password must be at least 6 characters long and contain at least one lowercase letter, one uppercase letter, one digit, and one special character");
+      return;
+    }
+    // toast.success("Register account successfully success!")
+    console.log("user data", userData);
+    dispatch(register(userData))
+  };
+
+  const capitalizeFirstLetter = (str) => {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  };
+
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    // Capitalize the first letter and update the state
+    if (name === 'firstName' || name === 'lastName') {
+      event.target.value = capitalizeFirstLetter(value);
+    }
+  };
+
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/;
+
+  return (
+    <div className="">
+      <form onSubmit={handleSubmit}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              required
+              id="firstName"
+              name="firstName"
+              label="First Name"
+              fullWidth
+              autoComplete="given-name"
+              onChange={handleInputChange}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              required
+              id="lastName"
+              name="lastName"
+              label="Last Name"
+              fullWidth
+              autoComplete="given-name"
+              onChange={handleInputChange}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              required
+              id="email"
+              name="email"
+              type="email"
+              label="Email"
+              fullWidth
+              autoComplete="given-name"
+              onChange={handleInputChange}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <FormControl fullWidth>
+              <InputLabel id="demo-simple-select-label">Role</InputLabel>
+              <Select
+                labelId="demo-simple-select-label"
+                id="demo-simple-select"
+                label="Role"
+                name="role"
+              >
+                <MenuItem value={"ROLE_ADMIN"}>Admin</MenuItem>
+                <MenuItem value={"ROLE_CUSTOMER"}>Customer</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              required
+              id="password"
+              name="password"
+              label="Password"
+              fullWidth
+              autoComplete="given-name"
+              type="password"
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <Button
+              className="bg-[#9155FD] w-full"
+              type="submit"
+              variant="contained"
+              size="large"
+              sx={{ padding: ".8rem 0" }}
+            >
+              Register
+            </Button>
+          </Grid>
+        </Grid>
+      </form>
+
+      <div className="flex justify-center flex-col items-center">
+        <div className="py-3 flex items-center ">
+          <p className="m-0 p-0">if you have already account ?</p>
+          <Button onClick={() => navigate("/login")} className="ml-5" size="small">
+            Login
+          </Button>
+        </div>
+      </div>
+
+      <Snackbar open={openSnackBar} autoHideDuration={6000} onClose={handleClose}>
+        <Alert onClose={handleClose} severity="success" sx={{ width: '100%' }}>
+          {auth.error ? auth.error : auth.user ? "Register Success" : ""}
+        </Alert>
+      </Snackbar>
+
+    </div>
+  );
+}
